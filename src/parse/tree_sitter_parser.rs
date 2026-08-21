@@ -2038,9 +2038,13 @@ fn atom_from_cursor<'a>(
 
     let highlight = if node.is_error() {
         AtomKind::TreeSitterError
-    } else if node.is_extra()
-        || node.kind() == "comment"
+    } else if node.kind() == "comment"
         || highlights.comment_ids.contains(&node.id())
+        // 'extra' nodes are usually comments, but not always: Ruby
+        // puts heredoc_body in `extras` because heredoc bodies occur
+        // out of source order. Don't call those comments when the
+        // highlight query says they're strings.
+        || (node.is_extra() && !highlights.string_ids.contains(&node.id()))
     {
         // 'extra' nodes in tree-sitter are comments. Most parsers use
         // 'comment' as their comment node name, but if they don't we
